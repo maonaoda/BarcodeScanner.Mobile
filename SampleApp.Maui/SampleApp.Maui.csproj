@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-ios;net8.0-android</TargetFrameworks>
-		<RuntimeIdentifier Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">ios-arm64</RuntimeIdentifier>
-		<PlatformTarget>arm64</PlatformTarget>
+		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
+		<RuntimeIdentifier Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">iiossimulator-x64</RuntimeIdentifier>
+		<!-- <PlatformTarget>arm64</PlatformTarget> -->
+		<!-- <PlatformTarget>arm64</PlatformTarget> -->
 
-		<MauiVersion>8.0.40</MauiVersion>
+		<MauiVersion>9.0.10</MauiVersion>
 		<OutputType>Exe</OutputType>
 		<RootNamespace>SampleApp.Maui</RootNamespace>
 		<UseMaui>true</UseMaui>
@@ -26,9 +27,11 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">12.0</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
 		
+
+		<NoWarn>$(NoWarn);XC0103;XC0022;XC0023;NU1701</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -54,9 +57,9 @@
 	<ItemGroup>
 	  <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 	  <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
-	  <PackageReference Include="Xamarin.AndroidX.Activity" Version="1.9.0.2" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" />
-	  <PackageReference Include="Xamarin.AndroidX.Activity.Ktx" Version="1.9.0.2" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" />
-	  <PackageReference Include="BarcodeScanner.Mobile.Maui" Version="8.0.40.1" />
+	  <PackageReference Include="Xamarin.AndroidX.Activity" Version="1.9.2.1" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" />
+	  <PackageReference Include="Xamarin.AndroidX.Activity.Ktx" Version="1.9.2.1" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'" />
+	  <ProjectReference Include="..\BarcodeScanner.Mobile.Maui\BarcodeScanner.Mobile.Maui.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

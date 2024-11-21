@@ -1,0 +1,60 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": ".NET Meteor Debugger",
+                "type": "dotnet-meteor.debugger",
+                "request": "launch",
+                "preLaunchTask": "dotnet-meteor: Build"
+            },
+            // Launch on iossimulator-x64
+            {
+                "name": ".NET Meteor: Debugger on iOSSimulator-x64",
+                "type": "dotnet-meteor.debugger",
+                "request": "launch",
+                "device": {
+                    "serial": "${command:dotnet-meteor.activeDeviceSerial}",
+                    "runtime_id": "iossimulator-x64",
+                    "platform": "ios",
+                    "is_emulator": true,
+                },
+                "preLaunchTask": "Build iOSSimulator-x64"
+            }
+        ]
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "type": "dotnet-meteor.task",
+                "target": "build",
+                "problemMatcher": [
+                    "$dotnet-meteor.problemMatcher"
+                ],
+                "label": "dotnet-meteor: Build",
+                "group": "build",
+            },
+            {
+                "type": "dotnet-meteor.task",
+                "target": "build",
+                "label": "Build iOSSimulator-x64",
+                "problemMatcher": [
+                    "$dotnet-meteor.problemMatcher"
+                ],
+                "args": [
+                    "-p:RuntimeIdentifier=iossimulator-x64"
+                ],
+                "group": {
+                    "kind": "build",
+                    "isDefault": true
+                }
+            }
+        ]
+    },
+}
