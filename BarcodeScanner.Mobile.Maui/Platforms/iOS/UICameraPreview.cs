@@ -1,4 +1,5 @@
 ﻿using AVFoundation;
+using Microsoft.Maui.Platform;
 using UIKit;
 
 namespace BarcodeScanner.Mobile.Platforms.iOS
@@ -10,6 +11,7 @@ namespace BarcodeScanner.Mobile.Platforms.iOS
         {
             PreviewLayer = layer;
             PreviewLayer.Frame = Layer.Bounds;
+            layer.BackgroundColor = Colors.Black.WithAlpha(0.5f).ToCGColor();
             Layer.AddSublayer(PreviewLayer);
         }
 
