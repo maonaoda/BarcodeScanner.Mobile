@@ -231,6 +231,8 @@ namespace BarcodeScanner.Mobile
 
         public void ChangeCameraFacing()
         {
+            if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
+                return;
 
             if (CaptureSession != null)
             {
