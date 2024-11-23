@@ -49,8 +49,21 @@ namespace BarcodeScanner.Mobile
             platformView.Dispose();
             base.DisconnectHandler(platformView);
         }
+
+        private readonly TaskCompletionSource<bool> _taskCompletionSource = new();
+        protected Task _waitingViewDidAppear => _taskCompletionSource.Task;
+        public void HandledViewDidAppear()
+        {
+            if (!_taskCompletionSource.Task.IsCompleted)
+            {
+                _taskCompletionSource.SetResult(true);
+            }
+        }
     }
 #else
-    public partial class CameraViewHandler { }
+    public partial class CameraViewHandler 
+    {
+        public void HandledViewDidAppear(){}
+    }
 #endif
 }

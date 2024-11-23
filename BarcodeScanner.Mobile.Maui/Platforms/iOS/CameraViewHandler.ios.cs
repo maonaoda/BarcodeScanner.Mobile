@@ -38,8 +38,8 @@ namespace BarcodeScanner.Mobile
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
-            ChangeCameraFacing();
-            ChangeCameraQuality();
+            // ChangeCameraFacing();
+            // ChangeCameraQuality();
 
             if (VideoDataOutput == null)
             {
@@ -69,9 +69,10 @@ namespace BarcodeScanner.Mobile
             CaptureSession.AddOutput(VideoDataOutput);
 
             CaptureSession.StartRunning();
-            HandleTorch();
-            SetFocusMode();
-            //HandleZoom();
+
+            // HandleTorch();
+            // SetFocusMode();
+            // HandleZoom();
         }
 
         public void Dispose()
@@ -124,10 +125,12 @@ namespace BarcodeScanner.Mobile
         }
         public void SetFocusMode(AVCaptureFocusMode focusMode = AVCaptureFocusMode.ContinuousAutoFocus)
         {
-            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(() =>
+            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(async () =>
             {
                 var videoDevice = AVCaptureDevice.GetDefaultDevice(AVFoundation.AVMediaTypes.Video);
                 if (videoDevice == null) return;
+
+                await _waitingViewDidAppear;
 
                 NSError error;
                 videoDevice.LockForConfiguration(out error);
@@ -155,10 +158,12 @@ namespace BarcodeScanner.Mobile
         }
         public void HandleTorch()
         {
-            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(() =>
+            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(async () =>
             {
                 if (isUpdatingTorch)
                     return;
+
+                await _waitingViewDidAppear;
 
                 if (CaptureDevice == null || !CaptureDevice.HasTorch || !CaptureDevice.TorchAvailable)
                     return;
@@ -186,8 +191,10 @@ namespace BarcodeScanner.Mobile
 
         private void HandleZoom()
         {
-            Application.Current.Dispatcher.Dispatch(() =>
+            Application.Current.Dispatcher.Dispatch(async () =>
             {
+                await _waitingViewDidAppear;
+
                 if (CaptureDevice == null)
                     return;
 
@@ -226,10 +233,12 @@ namespace BarcodeScanner.Mobile
             return zoom;
         }
 
-        public void ChangeCameraFacing()
+        public async void ChangeCameraFacing()
         {
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
+
+            await _waitingViewDidAppear;
 
             if (CaptureSession != null)
             {
@@ -267,8 +276,9 @@ namespace BarcodeScanner.Mobile
             }
         }
 
-        public void ChangeCameraQuality()
+        public async void ChangeCameraQuality()
         {
+            await _waitingViewDidAppear;
 
             var input = CaptureSession.Inputs.FirstOrDefault();
             if (input != null && CaptureSession != null)
