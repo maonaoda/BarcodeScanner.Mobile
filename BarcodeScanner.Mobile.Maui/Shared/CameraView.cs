@@ -193,6 +193,12 @@ namespace BarcodeScanner.Mobile
         public CameraView()
         {
             this.Unloaded += CameraView_Unloaded;
+            this.Loaded += CameraView_Loaded;
+        }
+        private void CameraView_Loaded(object sender, EventArgs e)
+        {
+            if(Handler is CameraViewHandler cameraViewHandler)
+                cameraViewHandler.HandledViewDidAppear();
         }
         /// <summary>
         /// Due to DisconnectHandler has to be called manually...we do it when the Window unloaded
