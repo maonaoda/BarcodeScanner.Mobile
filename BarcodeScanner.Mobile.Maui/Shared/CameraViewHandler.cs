@@ -48,8 +48,8 @@ namespace BarcodeScanner.Mobile
 
         protected override void DisconnectHandler(NativeCameraView platformView)
         {
-            this.Dispose();
             base.DisconnectHandler(platformView);
+            this.Dispose();
         }
 
         private readonly TaskCompletionSource<bool> _taskCompletionSource = new();

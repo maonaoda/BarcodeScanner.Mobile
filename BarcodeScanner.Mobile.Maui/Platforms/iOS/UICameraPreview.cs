@@ -6,7 +6,6 @@ namespace BarcodeScanner.Mobile.Platforms.iOS
 {
     public class UICameraPreview : UIView
     {
-        CameraViewHandler _cameraViewHandler;
         public UICameraPreview(AVCaptureVideoPreviewLayer layer) : base()
         {
             PreviewLayer = layer;
