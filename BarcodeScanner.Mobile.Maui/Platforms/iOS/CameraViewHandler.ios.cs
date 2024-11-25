@@ -124,8 +124,6 @@ namespace BarcodeScanner.Mobile
                 }
 
                 _uiCameraPerview?.Dispose();
-
-                VirtualView.HandledDestory();
             }
             catch
             {
