@@ -1,5 +1,6 @@
 using AVFoundation;
 using BarcodeScanner.Mobile.Platforms.iOS;
+using CoreGraphics;
 using CoreVideo;
 using Foundation;
 
@@ -26,8 +27,31 @@ namespace BarcodeScanner.Mobile
                 SessionPreset = AVCaptureSession.Preset640x480
             };
 
-            VideoPreviewLayer = new AVCaptureVideoPreviewLayer(CaptureSession);
-            VideoPreviewLayer.VideoGravity = AVLayerVideoGravity.ResizeAspectFill;
+            ChangeCameraFacing();
+            ChangeCameraQuality();
+
+            CaptureDevice.VideoZoomFactor = TranslateZoom(VirtualView.Zoom);
+
+            VideoDataOutput = new AVCaptureVideoDataOutput
+            {
+                AlwaysDiscardsLateVideoFrames = true,
+                WeakVideoSettings = new CVPixelBufferAttributes 
+                { 
+                    PixelFormatType = CVPixelFormatType.CV32BGRA
+                }
+                .Dictionary
+            };
+
+            CaptureVideoDelegate = new CaptureVideoDelegate(VirtualView);
+            CaptureVideoDelegate.OnDetected += OnDetected;
+            VideoDataOutput.AlwaysDiscardsLateVideoFrames = true;
+            VideoDataOutput.SetSampleBufferDelegate(CaptureVideoDelegate, CoreFoundation.DispatchQueue.MainQueue);
+            CaptureSession.AddOutput(VideoDataOutput);
+
+            VideoPreviewLayer = new AVCaptureVideoPreviewLayer(CaptureSession)
+            {
+                VideoGravity = AVLayerVideoGravity.ResizeAspectFill
+            };
 
             _uiCameraPerview = new UICameraPreview(VideoPreviewLayer);
             return _uiCameraPerview;
@@ -38,41 +62,17 @@ namespace BarcodeScanner.Mobile
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
-            // ChangeCameraFacing();
-            // ChangeCameraQuality();
-
-            if (VideoDataOutput == null)
-            {
-                VideoDataOutput = new AVCaptureVideoDataOutput
-                {
-                    AlwaysDiscardsLateVideoFrames = true,
-                    WeakVideoSettings = new CVPixelBufferAttributes { PixelFormatType = CVPixelFormatType.CV32BGRA }
-                 .Dictionary
-                };
-
-                if (CaptureVideoDelegate == null)
-                {
-                    CaptureVideoDelegate = new CaptureVideoDelegate(VirtualView);
-                    CaptureVideoDelegate.OnDetected += (eventArg) =>
-                    {
-                        PlatformView.InvokeOnMainThread(() =>
-                        {
-                            //CaptureSession.StopRunning();
-                            this.VirtualView?.TriggerOnDetected(eventArg.OCRResult, eventArg.BarcodeResults, eventArg.ImageData);
-                        });
-                    };
-                }
-                VideoDataOutput.AlwaysDiscardsLateVideoFrames = true;
-                VideoDataOutput.SetSampleBufferDelegate(CaptureVideoDelegate, CoreFoundation.DispatchQueue.MainQueue);
-            }
-
-            CaptureSession.AddOutput(VideoDataOutput);
-
             CaptureSession.StartRunning();
+        }
 
-            // HandleTorch();
-            // SetFocusMode();
-            // HandleZoom();
+
+        private void OnDetected(OnDetectedEventArg eventArg)
+        {
+            PlatformView.InvokeOnMainThread(() =>
+            {
+                //CaptureSession.StopRunning();
+                this.VirtualView?.TriggerOnDetected(eventArg.OCRResult, eventArg.BarcodeResults, eventArg.ImageData);
+            });
         }
 
         public void Dispose()
@@ -91,6 +91,15 @@ namespace BarcodeScanner.Mobile
                     CaptureInput.Dispose();
                     CaptureInput = null;
                 }
+
+                if(CaptureVideoDelegate is not null)
+                {
+                    CaptureVideoDelegate.OnDetected -= OnDetected;
+                    CaptureVideoDelegate = null;
+                }
+
+                VideoPreviewLayer?.Dispose();
+                VideoPreviewLayer = null;
 
                 if (CaptureSession != null)
                 {
@@ -125,20 +134,31 @@ namespace BarcodeScanner.Mobile
         }
         public void SetFocusMode(AVCaptureFocusMode focusMode = AVCaptureFocusMode.ContinuousAutoFocus)
         {
-            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(async () =>
+            Application.Current.Dispatcher.Dispatch(() =>
             {
-                var videoDevice = AVCaptureDevice.GetDefaultDevice(AVFoundation.AVMediaTypes.Video);
-                if (videoDevice == null) return;
-
-                await _waitingViewDidAppear;
-
-                NSError error;
-                videoDevice.LockForConfiguration(out error);
-                if (error == null)
+                var videoDevice = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video);
+                if (videoDevice is null)
                 {
-                    videoDevice.FocusMode = focusMode;
+                    return;
                 }
-                videoDevice.UnlockForConfiguration();
+
+                if (videoDevice.LockForConfiguration(out var error))
+                {
+                    if (videoDevice.AdjustingFocus && videoDevice.IsFocusModeSupported(focusMode))
+                    {
+                        if (videoDevice.FocusPointOfInterestSupported)
+                        {
+                            videoDevice.FocusPointOfInterest = new CGPoint(0.5, 0.5);
+                        }
+                        videoDevice.FocusMode = focusMode;
+                        if (videoDevice.AutoFocusRangeRestrictionSupported)
+                        {
+                            videoDevice.AutoFocusRangeRestriction = AVCaptureAutoFocusRangeRestriction.Near;
+                        }
+                    }
+
+                    videoDevice.UnlockForConfiguration();
+                };
             });
         }
 
@@ -156,14 +176,14 @@ namespace BarcodeScanner.Mobile
             }
             return false;
         }
-        public void HandleTorch()
+        public async void HandleTorch()
         {
-            Microsoft.Maui.Controls.Application.Current.Dispatcher.Dispatch(async () =>
+            await _waitingViewDidAppear;
+
+            Application.Current.Dispatcher.Dispatch(() =>
             {
                 if (isUpdatingTorch)
                     return;
-
-                await _waitingViewDidAppear;
 
                 if (CaptureDevice == null || !CaptureDevice.HasTorch || !CaptureDevice.TorchAvailable)
                     return;
@@ -191,12 +211,16 @@ namespace BarcodeScanner.Mobile
 
         private void HandleZoom()
         {
-            Application.Current.Dispatcher.Dispatch(async () =>
+            Application.Current.Dispatcher.Dispatch(() =>
             {
-                await _waitingViewDidAppear;
-
                 if (CaptureDevice == null)
                     return;
+
+                var targetZoom = TranslateZoom(VirtualView.Zoom);
+                if(CaptureDevice.VideoZoomFactor == targetZoom)
+                {
+                    return;
+                }
 
                 if (CaptureDevice.LockForConfiguration(out NSError error))
                 {
@@ -233,15 +257,24 @@ namespace BarcodeScanner.Mobile
             return zoom;
         }
 
-        public async void ChangeCameraFacing()
+        public void ChangeCameraFacing()
         {
+            Console.WriteLine("ChangeCameraFacing Start");
+
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
-            await _waitingViewDidAppear;
-
             if (CaptureSession != null)
             {
+                var position = VirtualView.CameraFacing == CameraFacing.Front ?
+                    AVCaptureDevicePosition.Front : AVCaptureDevicePosition.Back;
+                var targetCaptureDevice = GetCamera(position);
+
+                if(targetCaptureDevice is null || CaptureDevice == targetCaptureDevice)
+                {
+                    return;
+                }
+
                 CaptureSession.BeginConfiguration();
 
                 // Clean old input
@@ -259,10 +292,7 @@ namespace BarcodeScanner.Mobile
                     CaptureDevice = null;
                 }
 
-                var position = VirtualView.CameraFacing == CameraFacing.Front ?
-                    AVCaptureDevicePosition.Front : AVCaptureDevicePosition.Back;
-                CaptureDevice = GetCamera(position);
-
+                CaptureDevice = targetCaptureDevice;
 
                 if (CaptureDevice == null)
                 {
@@ -276,9 +306,9 @@ namespace BarcodeScanner.Mobile
             }
         }
 
-        public async void ChangeCameraQuality()
+        public void ChangeCameraQuality()
         {
-            await _waitingViewDidAppear;
+            Console.WriteLine("ChangeCameraQuality Start");
 
             var input = CaptureSession.Inputs.FirstOrDefault();
             if (input != null && CaptureSession != null)

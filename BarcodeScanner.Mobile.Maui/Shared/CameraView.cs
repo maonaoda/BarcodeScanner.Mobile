@@ -195,6 +195,13 @@ namespace BarcodeScanner.Mobile
             this.Unloaded += CameraView_Unloaded;
             this.Loaded += CameraView_Loaded;
         }
+
+        public void Destory()
+        {
+            this.Unloaded -= CameraView_Unloaded;
+            this.Loaded -= CameraView_Loaded;
+        }
+
         private void CameraView_Loaded(object sender, EventArgs e)
         {
             if(Handler is CameraViewHandler cameraViewHandler)
