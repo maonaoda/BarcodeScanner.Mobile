@@ -23,6 +23,8 @@ namespace BarcodeScanner.Mobile
 
         bool isUpdatingTorch { get; set; }
 
+        private readonly TaskCompletionSource<bool> _taskStartRunningCompletionSource = new();
+        protected Task _waitingStartRunning => _taskStartRunningCompletionSource.Task;
         UICameraPreview _uiCameraPerview;
         protected override UICameraPreview CreatePlatformView()
         {
@@ -30,11 +32,6 @@ namespace BarcodeScanner.Mobile
             {
                 SessionPreset = AVCaptureSession.Preset640x480
             };
-
-            ChangeCameraFacing();
-            ChangeCameraQuality();
-
-            CaptureDevice.VideoZoomFactor = TranslateZoom(VirtualView.Zoom);
 
             VideoDataOutput = new AVCaptureVideoDataOutput
             {
@@ -61,12 +58,20 @@ namespace BarcodeScanner.Mobile
             return _uiCameraPerview;
         }
 
-        public void Connect()
+        public async void Connect()
         {
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
-            CaptureSession.StartRunning();
+            ChangeCameraFacing(true);
+            ChangeCameraQuality(true);
+
+            _ = Task.Run(()=>
+            {
+                CaptureSession.StartRunning();
+                SetFocusMode();
+                _taskStartRunningCompletionSource.SetResult(true);
+            });
         }
 
         private void OnDetected(OnDetectedEventArg eventArg)
@@ -98,6 +103,7 @@ namespace BarcodeScanner.Mobile
                 if(CaptureVideoDelegate is not null)
                 {
                     CaptureVideoDelegate.OnDetected -= OnDetected;
+                    CaptureVideoDelegate.Dispose();
                     CaptureVideoDelegate = null;
                 }
 
@@ -108,6 +114,7 @@ namespace BarcodeScanner.Mobile
                 {
                     CaptureSession.RemoveOutput(VideoDataOutput);
                     CaptureSession.StopRunning();
+                    CaptureSession.Dispose();
                 }
 
                 if (VideoDataOutput != null)
@@ -115,6 +122,10 @@ namespace BarcodeScanner.Mobile
                     VideoDataOutput.Dispose();
                     VideoDataOutput = null;
                 }
+
+                _uiCameraPerview?.Dispose();
+
+                VirtualView.HandledDestory();
             }
             catch
             {
@@ -135,8 +146,10 @@ namespace BarcodeScanner.Mobile
                 _ => throw new ArgumentOutOfRangeException(nameof(VirtualView.CaptureQuality))
             };
         }
-        public void SetFocusMode(AVCaptureFocusMode focusMode = AVCaptureFocusMode.ContinuousAutoFocus)
+        public async void SetFocusMode(AVCaptureFocusMode focusMode = AVCaptureFocusMode.ContinuousAutoFocus)
         {
+            await _waitingViewDidAppear;
+            
             Application.Current.Dispatcher.Dispatch(() =>
             {
                 var videoDevice = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video);
@@ -181,6 +194,7 @@ namespace BarcodeScanner.Mobile
         }
         public async void HandleTorch()
         {
+            await _waitingStartRunning;
             await _waitingViewDidAppear;
 
             Application.Current.Dispatcher.Dispatch(() =>
@@ -212,8 +226,10 @@ namespace BarcodeScanner.Mobile
             });
         }
 
-        private void HandleZoom()
+        private async void HandleZoom()
         {
+            await _waitingStartRunning;
+
             Application.Current.Dispatcher.Dispatch(() =>
             {
                 if (CaptureDevice == null)
@@ -260,10 +276,13 @@ namespace BarcodeScanner.Mobile
             return zoom;
         }
 
-        public void ChangeCameraFacing()
+        public async void ChangeCameraFacing(bool init = false)
         {
-            Console.WriteLine("ChangeCameraFacing Start");
-            
+            if(!init)
+            {
+                await _waitingStartRunning;
+            }
+
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
@@ -309,9 +328,12 @@ namespace BarcodeScanner.Mobile
             }
         }
 
-        public void ChangeCameraQuality()
-        {
-            Console.WriteLine("ChangeCameraQuality Start");
+        public async void ChangeCameraQuality(bool init = false)
+        {   
+            if(!init)
+            {
+                await _waitingStartRunning;
+            }
 
             var input = CaptureSession.Inputs.FirstOrDefault();
             if (input != null && CaptureSession != null)

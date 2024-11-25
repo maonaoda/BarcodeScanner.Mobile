@@ -36,7 +36,7 @@
 		<Copyright>Copyright 2024</Copyright>
 		<PackOnBuild>true</PackOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageVersion>8.0.40.5-pre</PackageVersion>
+		<PackageVersion>8.0.42-pre</PackageVersion>
 	</PropertyGroup>
 	<!-- Going to use latest version library in MAUI -->
 	<ItemGroup Condition="( '$(TargetFramework)' == 'net8.0-android' )">

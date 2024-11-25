@@ -202,6 +202,12 @@ namespace BarcodeScanner.Mobile.Platforms.iOS
                 OnDetected?.Invoke(new OnDetectedEventArg { BarcodeResults = resultList, ImageData = GetReturnImage(image) });
             });
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            barcodeDetector.Dispose();
+            base.Dispose(disposing);
+        }
     }
 
 }
