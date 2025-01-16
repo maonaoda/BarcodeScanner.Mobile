@@ -36,8 +36,8 @@ namespace BarcodeScanner.Mobile
             VideoDataOutput = new AVCaptureVideoDataOutput
             {
                 AlwaysDiscardsLateVideoFrames = true,
-                WeakVideoSettings = new CVPixelBufferAttributes 
-                { 
+                WeakVideoSettings = new CVPixelBufferAttributes
+                {
                     PixelFormatType = CVPixelFormatType.CV32BGRA
                 }
                 .Dictionary
@@ -63,10 +63,10 @@ namespace BarcodeScanner.Mobile
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
-            ChangeCameraFacing(true);
+            await ChangeCameraFacing(true);
             ChangeCameraQuality(true);
 
-            _ = Task.Run(()=>
+            _ = Task.Run(() =>
             {
                 CaptureSession.StartRunning();
                 SetFocusMode();
@@ -100,7 +100,7 @@ namespace BarcodeScanner.Mobile
                     CaptureInput = null;
                 }
 
-                if(CaptureVideoDelegate is not null)
+                if (CaptureVideoDelegate is not null)
                 {
                     CaptureVideoDelegate.OnDetected -= OnDetected;
                     CaptureVideoDelegate.Dispose();
@@ -147,7 +147,7 @@ namespace BarcodeScanner.Mobile
         public async void SetFocusMode(AVCaptureFocusMode focusMode = AVCaptureFocusMode.ContinuousAutoFocus)
         {
             await _waitingViewDidAppear;
-            
+
             Application.Current.Dispatcher.Dispatch(() =>
             {
                 var videoDevice = AVCaptureDevice.GetDefaultDevice(AVMediaTypes.Video);
@@ -172,7 +172,7 @@ namespace BarcodeScanner.Mobile
                     }
 
                     videoDevice.UnlockForConfiguration();
-                };
+                }
             });
         }
 
@@ -234,7 +234,7 @@ namespace BarcodeScanner.Mobile
                     return;
 
                 var targetZoom = TranslateZoom(VirtualView.Zoom);
-                if(CaptureDevice.VideoZoomFactor == targetZoom)
+                if (CaptureDevice.VideoZoomFactor == targetZoom)
                 {
                     return;
                 }
@@ -274,13 +274,8 @@ namespace BarcodeScanner.Mobile
             return zoom;
         }
 
-        public async void ChangeCameraFacing(bool init = false)
+        public virtual async Task ChangeCameraFacing(bool init = false)
         {
-            if(!init)
-            {
-                await _waitingStartRunning;
-            }
-
             if (DeviceInfo.Current.DeviceType == DeviceType.Virtual)
                 return;
 
@@ -290,7 +285,25 @@ namespace BarcodeScanner.Mobile
                     AVCaptureDevicePosition.Front : AVCaptureDevicePosition.Back;
                 var targetCaptureDevice = GetCamera(position);
 
-                if(targetCaptureDevice is null || CaptureDevice == targetCaptureDevice)
+                if (targetCaptureDevice is null)
+                {
+                    if (position == AVCaptureDevicePosition.Back)
+                    {
+                        targetCaptureDevice = GetCamera(AVCaptureDevicePosition.Front);
+                    }
+
+                    if (targetCaptureDevice is null)
+                    {
+                        throw new NotSupportedException("The selected camera is not supported on this device");
+                    }
+                }
+
+                if (!init)
+                {
+                    await _waitingStartRunning;
+                }
+
+                if (CaptureDevice == targetCaptureDevice)
                 {
                     return;
                 }
@@ -314,11 +327,6 @@ namespace BarcodeScanner.Mobile
 
                 CaptureDevice = targetCaptureDevice;
 
-                if (CaptureDevice == null)
-                {
-                    throw new NotSupportedException("The selected camera is not supported on this device");
-                }
-
                 CaptureInput = new AVCaptureDeviceInput(CaptureDevice, out var err);
                 CaptureSession.AddInput(CaptureInput);
 
@@ -327,8 +335,8 @@ namespace BarcodeScanner.Mobile
         }
 
         public async void ChangeCameraQuality(bool init = false)
-        {   
-            if(!init)
+        {
+            if (!init)
             {
                 await _waitingStartRunning;
             }
@@ -369,7 +377,7 @@ namespace BarcodeScanner.Mobile
                                     },
                                     AVMediaTypes.Video,
                                     position);
-            
+
             return session.Devices.FirstOrDefault();
         }
     }
