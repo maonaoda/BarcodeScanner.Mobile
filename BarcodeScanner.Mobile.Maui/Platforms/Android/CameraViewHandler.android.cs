@@ -79,6 +79,11 @@ namespace BarcodeScanner.Mobile
 
             var cameraSelector = SelectCamera(cameraProvider);
 
+            if (cameraSelector is null)
+            {
+                return;
+            }
+
             try
             {
                 // Unbind use cases before rebinding
@@ -105,7 +110,8 @@ namespace BarcodeScanner.Mobile
             }
         }
 
-        private CameraSelector SelectCamera(ProcessCameraProvider cameraProvider)
+#nullable enable
+        protected virtual CameraSelector? SelectCamera(ProcessCameraProvider cameraProvider)
         {
             if (VirtualView.CameraFacing == CameraFacing.Front)
             {
@@ -116,10 +122,20 @@ namespace BarcodeScanner.Mobile
             }
 
             if (cameraProvider.HasCamera(CameraSelector.DefaultBackCamera))
+            {
                 return CameraSelector.DefaultBackCamera;
+            }
+            else
+            {
+                if (cameraProvider.HasCamera(CameraSelector.DefaultFrontCamera))
+                {
+                    return CameraSelector.DefaultFrontCamera;
+                }
+            }
 
             throw new NotSupportedException("Back camera is not supported in this device");
         }
+#nullable disable
 
         /// <summary>
         /// Logic from https://stackoverflow.com/a/66659592/9032777
