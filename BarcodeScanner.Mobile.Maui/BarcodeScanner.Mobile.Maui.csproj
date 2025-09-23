@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net9.0;net9.0-android;net9.0-ios;</TargetFrameworks>
@@ -17,9 +17,9 @@
 		<RootNamespace>BarcodeScanner.Mobile.Maui</RootNamespace>
 
 		<Product></Product>
-		<AssemblyVersion>9.0.1.1</AssemblyVersion>
-		<AssemblyFileVersion>9.0.1.1</AssemblyFileVersion>
-		<Version>9.0.1.1</Version>
+		<AssemblyVersion>9.0.1.2</AssemblyVersion>
+		<AssemblyFileVersion>9.0.1.2</AssemblyFileVersion>
+		<Version>9.0.1.2</Version>
 		<NeutralLanguage>en</NeutralLanguage>
 
 		<!--Version of C# to use -->
@@ -37,7 +37,7 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackOnBuild>true</PackOnBuild>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageVersion>9.0.1.1-pre</PackageVersion>
+		<PackageVersion>9.0.1.2-pre</PackageVersion>
 	</PropertyGroup>
 
 	<!-- Going to use latest version library in MAUI -->
