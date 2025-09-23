@@ -46,7 +46,6 @@ namespace BarcodeScanner.Mobile
         protected override void DisconnectHandler(NativeCameraView platformView)
         {
             Dispose();
-            platformView.Dispose();
             base.DisconnectHandler(platformView);
         }
 
@@ -61,9 +60,9 @@ namespace BarcodeScanner.Mobile
         }
     }
 #else
-    public partial class CameraViewHandler 
+    public partial class CameraViewHandler
     {
-        public void HandledViewDidAppear(){}
+        public void HandledViewDidAppear() { }
     }
 #endif
 }
